@@ -1,5 +1,7 @@
 # Hemoscan AI: Malaria Cell Diagnostics Portal
 
+![Hemoscan AI Dashboard](static/screenshots/loaded_home_page.png)
+
 Hemoscan AI is an automated stained blood smear microscopy analysis portal that classifies red blood cell micrographs as either **Parasitized (Infected)** or **Uninfected (Healthy)**. It uses a machine learning classifier trained on the official NIH malaria dataset, wrapped in a premium, glassmorphic web dashboard for clinicians and researchers.
 
 ---
@@ -68,3 +70,9 @@ Navigate to `http://localhost:5000` in your web browser.
 * **Quick-Load Sample Gallery**: Instantly load and classify sample micrographs from the NIH dataset.
 * **Performance Analytics**: Interactive confusion matrix and multi-tab charts powered by Chart.js. Clinicians can toggle between the model overview bar chart, the validation **ROC Curve**, and the **Precision-Recall Curve**.
 * **Educational Hub**: Academic resources detailing malaria pathology, smear diagnosis methods, and parasite stages.
+
+---
+
+## 📸 Interactive Spot Segmentation Preview
+
+![AI Spot Segmentation](static/screenshots/parasitized_segmented_view.png)
