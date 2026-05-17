@@ -64,7 +64,7 @@ Navigate to `http://localhost:5000` in your web browser.
 ## 🎨 Web Portal Features
 
 * **Overview Dashboard**: Live statistics showing AI engine status, accuracy, sensitivity, and dataset metrics.
-* **Active Scanner**: Drag-and-drop file uploader with a laser-sweep scan animation and real-time classification results.
+* **Active Scanner**: Drag-and-drop file uploader with a laser-sweep scan animation and real-time classification results. Includes a floating view toggle to swap between the **Original Smear** and the **AI Segmented Spot** highlighting the precise coordinates of the parasite.
 * **Quick-Load Sample Gallery**: Instantly load and classify sample micrographs from the NIH dataset.
-* **Performance Analytics**: Interactive confusion matrix and model performance metrics bar chart powered by Chart.js.
+* **Performance Analytics**: Interactive confusion matrix and multi-tab charts powered by Chart.js. Clinicians can toggle between the model overview bar chart, the validation **ROC Curve**, and the **Precision-Recall Curve**.
 * **Educational Hub**: Academic resources detailing malaria pathology, smear diagnosis methods, and parasite stages.
