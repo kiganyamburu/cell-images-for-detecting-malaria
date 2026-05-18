@@ -128,6 +128,10 @@
                                     <div class="image-wrapper">
                                         <img id="preview-image" src="" alt="Cell smear preview">
                                         <div class="scan-overlay" id="scan-overlay"></div>
+                                        <div class="view-toggles" id="view-toggles" style="display: none;">
+                                            <button class="toggle-btn active" id="toggle-original" type="button">Original</button>
+                                            <button class="toggle-btn" id="toggle-overlay" type="button">AI Segmented Spot</button>
+                                        </div>
                                     </div>
                                     <button class="btn btn-danger" id="clear-btn"><i class="fa-solid fa-trash-can"></i> Remove</button>
                                 </div>
@@ -249,8 +253,17 @@
                             </div>
 
                             <div class="chart-wrapper">
-                                <h3>Classification Performance Overview</h3>
-                                <canvas id="performance-chart" height="220"></canvas>
+                                <div class="chart-header-row">
+                                    <h3 id="chart-title">Classification Performance Overview</h3>
+                                    <div class="chart-tabs">
+                                        <button class="chart-tab-btn active" data-chart="overview" type="button">Overview</button>
+                                        <button class="chart-tab-btn" data-chart="roc" type="button">ROC Curve</button>
+                                        <button class="chart-tab-btn" data-chart="pr" type="button">PR Curve</button>
+                                    </div>
+                                </div>
+                                <div class="canvas-container">
+                                    <canvas id="performance-chart" height="220"></canvas>
+                                </div>
                             </div>
                         </div>
 

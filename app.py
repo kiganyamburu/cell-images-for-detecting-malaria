@@ -1,7 +1,9 @@
 import os
 import json
 import joblib
+import base64
 import numpy as np
+from io import BytesIO
 from PIL import Image
 from flask import Flask, request, jsonify, render_template, send_from_directory
 
@@ -97,6 +99,64 @@ def extract_features(img):
     features = np.concatenate([features, cropped_arr])
     return features
 
+def generate_segmented_overlay(img):
+    try:
+        # Convert PIL Image to RGB and L arrays
+        arr = np.array(img.convert('RGB'))
+        gray = np.array(img.convert('L'))
+        
+        # Threshold cell mask
+        cell_mask = gray > 15
+        if not np.any(cell_mask):
+            return None
+            
+        # Calculate purple ratio per pixel
+        r = arr[:, :, 0].astype(float)
+        g = arr[:, :, 1].astype(float)
+        b = arr[:, :, 2].astype(float)
+        
+        purple_ratio = (r + b) / (2.0 * g + 1e-5)
+        
+        # Parasite pixels: inside cell, dark, and high purple ratio
+        mean_cell_gray = gray[cell_mask].mean()
+        parasite_mask = cell_mask & (gray < mean_cell_gray * 0.82) & (purple_ratio > 1.08)
+        
+        if not np.any(parasite_mask):
+            return None
+            
+        # Import binary_dilation
+        from scipy.ndimage import binary_dilation
+        dilated_mask = binary_dilation(parasite_mask, iterations=2)
+        boundary_mask = dilated_mask & ~parasite_mask
+        
+        # Create overlay
+        overlay_arr = arr.copy()
+        
+        # Paint parasite body tinted amethyst-purple [168, 85, 247]
+        overlay_arr[parasite_mask] = (overlay_arr[parasite_mask] * 0.35 + np.array([168, 85, 247]) * 0.65).astype(np.uint8)
+        # Paint boundary bright glowing neon cyan [0, 255, 255]
+        overlay_arr[boundary_mask] = [0, 255, 255]
+        
+        # Convert back to PIL Image
+        overlay_img = Image.fromarray(overlay_arr)
+        return overlay_img
+    except Exception as e:
+        print(f"Error generating segmented overlay: {e}")
+        return None
+
+def get_base64_overlay(img):
+    overlay = generate_segmented_overlay(img)
+    if overlay is None:
+        return None
+    try:
+        buffered = BytesIO()
+        overlay.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return f"data:image/png;base64,{img_str}"
+    except Exception as e:
+        print(f"Error converting overlay to base64: {e}")
+        return None
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -138,12 +198,18 @@ def predict():
         label_str = "Parasitized" if pred == 1 else "Uninfected"
         confidence = float(prob[pred])
         
+        # Generate segmented overlay if parasitized
+        overlay_b64 = None
+        if pred == 1:
+            overlay_b64 = get_base64_overlay(img)
+            
         # Return analysis details
         # For rendering, we can also extract some visual properties to display
         return jsonify({
             "prediction": label_str,
             "confidence": confidence,
             "label": pred,
+            "overlay": overlay_b64,
             "details": {
                 "uninfected_prob": float(prob[0]),
                 "parasitized_prob": float(prob[1])

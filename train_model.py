@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, precision_recall_fscore_support
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, precision_recall_fscore_support, roc_curve, precision_recall_curve
 
 # Paths
 DATA_DIR = r"c:\Users\User\Desktop\Projects\cell-images-for-detecting-malaria\data\cell_images"
@@ -159,6 +159,19 @@ def main():
     joblib.dump(clf, model_path)
     print(f"Model saved to {model_path}")
     
+    # Calculate ROC and Precision-Recall curves
+    probs = clf.predict_proba(X_test)[:, 1]
+    fpr, tpr, _ = roc_curve(y_test, probs)
+    precision_vals, recall_vals, _ = precision_recall_curve(y_test, probs)
+    
+    # Downsample curves to 40 points
+    n_points = 40
+    idx_roc = np.linspace(0, len(fpr) - 1, min(n_points, len(fpr))).astype(int)
+    roc_points = [{"fpr": float(fpr[i]), "tpr": float(tpr[i])} for i in idx_roc]
+    
+    idx_pr = np.linspace(0, len(precision_vals) - 1, min(n_points, len(precision_vals))).astype(int)
+    pr_points = [{"recall": float(recall_vals[i]), "precision": float(precision_vals[i])} for i in idx_pr]
+
     # Prepare metrics JSON
     metrics = {
         "train_accuracy": float(train_acc),
@@ -171,6 +184,10 @@ def main():
             "fp": int(fp),
             "fn": int(fn),
             "tp": int(tp)
+        },
+        "curves": {
+            "roc": roc_points,
+            "pr": pr_points
         },
         "gallery_samples": {
             "parasitized": parasitized_files,

@@ -29,9 +29,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Chart References
     let perfChart = null;
+    
+    // Segmentation Overlay Images
+    let originalImgSrc = "";
+    let segmentedImgSrc = "";
 
     // Load Model Metrics & Build Gallery
     let metricsData = null;
+    
+    // View Toggles variables (will be initialized below)
+    let viewToggles = null;
+    let toggleOriginalBtn = null;
+    let toggleOverlayBtn = null;
+
+    // Chart Tab Click Handlers
+    const chartTabBtns = document.querySelectorAll('.chart-tab-btn');
+    const chartTitle = document.getElementById('chart-title');
+    
+    chartTabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!metricsData) return;
+            
+            chartTabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const chartType = btn.getAttribute('data-chart');
+            
+            // Update Title
+            if (chartType === 'overview') {
+                chartTitle.textContent = "Classification Performance Overview";
+            } else if (chartType === 'roc') {
+                chartTitle.textContent = "Receiver Operating Characteristic (ROC) Curve";
+            } else if (chartType === 'pr') {
+                chartTitle.textContent = "Precision-Recall Curve";
+            }
+            
+            initPerformanceChart(metricsData, chartType);
+        });
+    });
+
     async function loadMetrics() {
         try {
             const response = await fetch('/api/stats');
@@ -66,80 +103,164 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('#cm-tp .cm-val').textContent = data.confusion_matrix.tp;
     }
 
-    function initPerformanceChart(data) {
+    function initPerformanceChart(data, chartType = 'overview') {
         const ctx = document.getElementById('performance-chart');
         if (!ctx) return;
 
         if (perfChart) perfChart.destroy();
 
-        perfChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Accuracy', 'Sensitivity (Recall)', 'Precision', 'F1-Score'],
-                datasets: [{
-                    label: 'RF Classifier Score',
-                    data: [
-                        data.val_accuracy, 
-                        data.recall, 
-                        data.precision, 
-                        data.f1_score
-                    ],
-                    backgroundColor: [
-                        'rgba(168, 85, 247, 0.45)', // Amethyst
-                        'rgba(16, 185, 129, 0.45)', // Emerald
-                        'rgba(14, 165, 233, 0.45)', // Sky
-                        'rgba(245, 158, 11, 0.45)'  // Amber
-                    ],
-                    borderColor: [
-                        '#a855f7',
-                        '#10b981',
-                        '#0ea5e9',
-                        '#f59e0b'
-                    ],
-                    borderWidth: 1.5,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 1.0,
-                        ticks: {
-                            color: '#9ca3af',
-                            callback: function(value) {
-                                return (value * 100) + "%";
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: '#9ca3af'
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
+        let chartConfig = {};
+
+        if (chartType === 'overview') {
+            chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: ['Accuracy', 'Sensitivity (Recall)', 'Precision', 'F1-Score'],
+                    datasets: [{
+                        label: 'RF Classifier Score',
+                        data: [
+                            data.val_accuracy, 
+                            data.recall, 
+                            data.precision, 
+                            data.f1_score
+                        ],
+                        backgroundColor: [
+                            'rgba(168, 85, 247, 0.45)', // Amethyst
+                            'rgba(16, 185, 129, 0.45)', // Emerald
+                            'rgba(14, 165, 233, 0.45)', // Sky
+                            'rgba(245, 158, 11, 0.45)'  // Amber
+                        ],
+                        borderColor: [
+                            '#a855f7',
+                            '#10b981',
+                            '#0ea5e9',
+                            '#f59e0b'
+                        ],
+                        borderWidth: 1.5,
+                        borderRadius: 8
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        display: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            ticks: {
+                                color: '#9ca3af',
+                                callback: function(value) { return (value * 100) + "%"; }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { display: false }
+                        }
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + (context.raw * 100).toFixed(1) + '%';
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw * 100).toFixed(1) + '%';
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            };
+        } else if (chartType === 'roc') {
+            const rocData = data.curves && data.curves.roc ? data.curves.roc : [];
+            chartConfig = {
+                type: 'line',
+                data: {
+                    labels: rocData.map(p => p.fpr.toFixed(2)),
+                    datasets: [{
+                        label: 'ROC Curve (AUC = ' + data.val_accuracy.toFixed(3) + ')',
+                        data: rocData.map(p => p.tpr),
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        fill: true,
+                        tension: 0.25,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#a855f7'
+                    }, {
+                        label: 'Random Guess',
+                        data: rocData.map(p => p.fpr),
+                        borderColor: 'rgba(255, 255, 255, 0.25)',
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'True Positive Rate (Sensitivity)', color: '#9ca3af' },
+                            beginAtZero: true,
+                            max: 1.0,
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'False Positive Rate (1 - Specificity)', color: '#9ca3af' },
+                            ticks: { color: '#9ca3af', maxRotation: 0 },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, labels: { color: '#9ca3af' } }
+                    }
+                }
+            };
+        } else if (chartType === 'pr') {
+            const prData = data.curves && data.curves.pr ? data.curves.pr : [];
+            chartConfig = {
+                type: 'line',
+                data: {
+                    labels: prData.map(p => p.recall.toFixed(2)),
+                    datasets: [{
+                        label: 'Precision-Recall Curve (F1 = ' + data.f1_score.toFixed(3) + ')',
+                        data: prData.map(p => p.precision),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.25,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Precision', color: '#9ca3af' },
+                            beginAtZero: true,
+                            max: 1.0,
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Recall (Sensitivity)', color: '#9ca3af' },
+                            ticks: { color: '#9ca3af', maxRotation: 0 },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, labels: { color: '#9ca3af' } }
+                    }
+                }
+            };
+        }
+
+        perfChart = new Chart(ctx, chartConfig);
     }
 
     function buildSampleGallery(data) {
@@ -260,6 +381,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewImage = document.getElementById('preview-image');
     const clearBtn = document.getElementById('clear-btn');
     
+    // View Toggles initialization
+    viewToggles = document.getElementById('view-toggles');
+    toggleOriginalBtn = document.getElementById('toggle-original');
+    toggleOverlayBtn = document.getElementById('toggle-overlay');
+    
+    if (toggleOriginalBtn && toggleOverlayBtn && previewImage) {
+        toggleOriginalBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleOriginalBtn.classList.add('active');
+            toggleOverlayBtn.classList.remove('active');
+            if (originalImgSrc) {
+                previewImage.src = originalImgSrc;
+            }
+        });
+        
+        toggleOverlayBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleOverlayBtn.classList.add('active');
+            toggleOriginalBtn.classList.remove('active');
+            if (segmentedImgSrc) {
+                previewImage.src = segmentedImgSrc;
+            }
+        });
+    }
+    
     const resultsCard = document.getElementById('results-card');
     const emptyResults = document.getElementById('empty-results');
     const resultsContent = document.getElementById('results-content');
@@ -330,6 +476,13 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyResults.style.display = 'flex';
         resultsContent.style.display = 'none';
         
+        // Reset Segmented Image vars
+        originalImgSrc = "";
+        segmentedImgSrc = "";
+        if (viewToggles) viewToggles.style.display = 'none';
+        if (toggleOriginalBtn) toggleOriginalBtn.classList.add('active');
+        if (toggleOverlayBtn) toggleOverlayBtn.classList.remove('active');
+
         // Reset results UI
         diagnosisBadge.className = 'diagnosis-badge';
         diagnosisText.textContent = '--';
@@ -360,6 +513,17 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyResults.style.display = 'none';
         resultsContent.style.display = 'flex';
         
+        // Handle Segmented Overlay Toggles
+        if (data.overlay) {
+            segmentedImgSrc = data.overlay;
+            if (viewToggles) viewToggles.style.display = 'flex';
+            if (toggleOriginalBtn) toggleOriginalBtn.classList.add('active');
+            if (toggleOverlayBtn) toggleOverlayBtn.classList.remove('active');
+        } else {
+            segmentedImgSrc = "";
+            if (viewToggles) viewToggles.style.display = 'none';
+        }
+
         // Update Badge
         const isParasitized = data.prediction === "Parasitized";
         diagnosisText.textContent = isParasitized ? "Parasitized (Infected)" : "Uninfected (Healthy)";
@@ -414,6 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show image preview
         const reader = new FileReader();
         reader.onload = (e) => {
+            originalImgSrc = e.target.result;
             previewImage.src = e.target.result;
             dropzonePrompt.style.display = 'none';
             dropzonePreview.style.display = 'block';
@@ -452,6 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function scanCellSmear(folder, filename) {
         // Set preview image in Dropzone
         const imgUrl = `/static/cell_images/${folder}/${filename}`;
+        originalImgSrc = imgUrl;
         previewImage.src = imgUrl;
         dropzonePrompt.style.display = 'none';
         dropzonePreview.style.display = 'block';
