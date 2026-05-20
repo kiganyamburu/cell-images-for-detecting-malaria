@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateDashboardMetrics(data) {
-        document.getElementById('val-accuracy').textContent = (data.train_accuracy * 100).toFixed(1) + '%';
+        document.getElementById('val-accuracy').textContent = (data.val_accuracy * 100).toFixed(1) + '%';
         document.getElementById('val-recall').textContent = (data.recall * 100).toFixed(1) + '%';
         
         const f1Val = document.getElementById('val-f1');

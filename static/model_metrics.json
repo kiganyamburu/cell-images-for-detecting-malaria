@@ -1,0 +1,43 @@
+{
+    "train_accuracy": 1.0,
+    "val_accuracy": 0.9525,
+    "precision": 0.960325534079349,
+    "recall": 0.944,
+    "f1_score": 0.9520927887039838,
+    "confusion_matrix": {
+        "tn": 961,
+        "fp": 39,
+        "fn": 56,
+        "tp": 944
+    },
+    "gallery_samples": {
+        "parasitized": [
+            "C74P35_ThinF_IMG_20150815_120957_cell_128.png",
+            "C120P81ThinF_IMG_20151002_130407_cell_183.png",
+            "C101P62ThinF_IMG_20150918_151942_cell_82.png",
+            "C91P52ThinF_IMG_20150821_124504_cell_195.png",
+            "C147P108ThinF_IMG_20151115_092605_cell_224.png",
+            "C97P58ThinF_IMG_20150917_151320_cell_153.png",
+            "C118P79ThinF_IMG_20151002_105827_cell_145.png",
+            "C101P62ThinF_IMG_20150923_170246_cell_84.png",
+            "C183P144NThinF_IMG_20151201_222119_cell_132.png",
+            "C133P94ThinF_IMG_20151004_153930_cell_103.png",
+            "C116P77ThinF_IMG_20150930_171448_cell_120.png",
+            "C101P62ThinF_IMG_20150918_155731_cell_72.png"
+        ],
+        "uninfected": [
+            "C67P28N_ThinF_IMG_20150819_115417_cell_158.png",
+            "C124P85ThinF_IMG_20151002_154502_cell_11.png",
+            "C103P64ThinF_IMG_20150918_164250_cell_19.png",
+            "C82P43ThinF_IMG_20150817_124418_cell_141.png",
+            "C162P123ThinF_IMG_20151116_104342_cell_83.png",
+            "C88P49ThinF_IMG_20150820_151451_cell_89.png",
+            "C119P80ThinF_IMG_20151002_124425_cell_32.png",
+            "C104P65ThinF_IMG_20150918_172537_cell_33.png",
+            "C210ThinF_IMG_20151029_162439_cell_257.png",
+            "C143P104ThinF_IMG_20151005_225454_cell_17.png",
+            "C111P72ThinF_IMG_20150930_113003_cell_16.png",
+            "C103P64ThinF_IMG_20150918_164553_cell_160.png"
+        ]
+    }
+}
