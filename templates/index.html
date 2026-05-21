@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEMOSCAN AI | Malaria Detection Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-microscope pulse-icon"></i>
+                    <span>HEMOSCAN <span class="accent-text">AI</span></span>
+                </div>
+                <p class="subtitle">Malaria Diagnostics Portal</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active" data-section="scanner"><a href="#scanner"><i class="fa-solid fa-qrcode"></i> Analyze Cells</a></li>
+                    <li data-section="analytics"><a href="#analytics"><i class="fa-solid fa-chart-line"></i> Model Analytics</a></li>
+                    <li data-section="gallery"><a href="#gallery"><i class="fa-solid fa-images"></i> Cell Gallery</a></li>
+                    <li data-section="education"><a href="#education"><i class="fa-solid fa-book-medical"></i> Educational Hub</a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="dot live"></span>
+                    <span class="status-text">AI Engine: Online</span>
+                </div>
+                <p class="copyright">NIH Malaria Dataset V1</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h1>Malaria Cell Diagnosis Portal</h1>
+                    <p class="date-today" id="current-date">Automated Stained smear microscopy analysis</p>
+                </div>
+                <div class="user-profile">
+                    <div class="profile-info">
+                        <span class="user-role">Research Clinician</span>
+                    </div>
+                    <div class="avatar"><i class="fa-solid fa-user-doctor"></i></div>
+                </div>
+            </header>
+
+            <!-- Metrics Overview Cards -->
+            <section class="metrics-grid">
+                <div class="metric-card glass">
+                    <div class="metric-header">
+                        <span>MODEL ACCURACY</span>
+                        <i class="fa-solid fa-bullseye icon-accuracy"></i>
+                    </div>
+                    <div class="metric-value" id="val-accuracy">--%</div>
+                    <div class="metric-trend text-success">
+                        <i class="fa-solid fa-circle-check"></i> High Precision Classifier
+                    </div>
+                </div>
+                <div class="metric-card glass">
+                    <div class="metric-header">
+                        <span>SENSITIVITY (RECALL)</span>
+                        <i class="fa-solid fa-eye icon-recall"></i>
+                    </div>
+                    <div class="metric-value" id="val-recall">--%</div>
+                    <div class="metric-trend text-info">
+                        <i class="fa-solid fa-shield-virus"></i> False negative minimizer
+                    </div>
+                </div>
+                <div class="metric-card glass">
+                    <div class="metric-header">
+                        <span>F1-SCORE</span>
+                        <i class="fa-solid fa-layer-group icon-f1"></i>
+                    </div>
+                    <div class="metric-value" id="val-f1">--%</div>
+                    <div class="metric-trend">
+                        Harmonic mean score
+                    </div>
+                </div>
+                <div class="metric-card glass">
+                    <div class="metric-header">
+                        <span>DATASET IMAGES</span>
+                        <i class="fa-solid fa-database icon-db"></i>
+                    </div>
+                    <div class="metric-value">27,558</div>
+                    <div class="metric-trend">
+                        Balanced (NIH Repository)
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Sections Wrapper -->
+            <div class="sections-container">
+                
+                <!-- Section 1: Analyze & Scan Cells -->
+                <section id="scanner-section" class="content-section active">
+                    <div class="dashboard-grid">
+                        <!-- Left: Scanner dropzone -->
+                        <div class="grid-card glass main-scanner">
+                            <h2 class="section-title"><i class="fa-solid fa-shield-halved"></i> Active Scanner</h2>
+                            <p class="section-desc">Upload a blood smear cell micrograph (PNG/JPG) to test for plasmodium infection.</p>
+                            
+                            <div class="dropzone" id="dropzone">
+                                <input type="file" id="file-input" accept="image/*" style="display: none;">
+                                <div class="dropzone-prompt" id="dropzone-prompt">
+                                    <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                                    <h3>Drag & Drop Micrograph</h3>
+                                    <p>or <span>browse your computer</span></p>
+                                    <p class="file-size-info">Supports single cell images from NIH dataset</p>
+                                </div>
+                                <div class="dropzone-preview" id="dropzone-preview" style="display: none;">
+                                    <div class="image-wrapper">
+                                        <img id="preview-image" src="" alt="Cell smear preview">
+                                        <div class="scan-overlay" id="scan-overlay"></div>
+                                    </div>
+                                    <button class="btn btn-danger" id="clear-btn"><i class="fa-solid fa-trash-can"></i> Remove</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Analysis results -->
+                        <div class="grid-card glass scan-results" id="results-card">
+                            <h2 class="section-title"><i class="fa-solid fa-clipboard-check"></i> Diagnostic Report</h2>
+                            
+                            <div class="empty-results" id="empty-results">
+                                <i class="fa-solid fa-hourglass-half placeholder-icon"></i>
+                                <h3>Waiting for smear...</h3>
+                                <p>Load a cell micrograph using the upload box or select a sample cell below to trigger real-time AI classification.</p>
+                            </div>
+
+                            <div class="results-content" id="results-content" style="display: none;">
+                                <div class="diagnosis-badge-container">
+                                    <div class="diagnosis-badge" id="diagnosis-badge">
+                                        <span id="diagnosis-text">--</span>
+                                    </div>
+                                </div>
+
+                                <div class="confidence-section">
+                                    <div class="confidence-header">
+                                        <span>AI Confidence Score</span>
+                                        <span class="confidence-percent" id="confidence-percent">0%</span>
+                                    </div>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="confidence-bar"></div>
+                                    </div>
+                                </div>
+
+                                <div class="feature-breakdown">
+                                    <h3>Analysis Extraction Profiles</h3>
+                                    <div class="feature-pill-grid">
+                                        <div class="feature-pill">
+                                            <span class="feat-label">Stain Intensity (Purple Ratio)</span>
+                                            <span class="feat-status" id="feat-stain">Evaluating...</span>
+                                        </div>
+                                        <div class="feature-pill">
+                                            <span class="feat-label">Chromatin Contrast</span>
+                                            <span class="feat-status" id="feat-chromatin">Evaluating...</span>
+                                        </div>
+                                        <div class="feature-pill">
+                                            <span class="feat-label">Cell Segmentation Area</span>
+                                            <span class="feat-status" id="feat-area">Evaluating...</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="clinical-note" id="clinical-note">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <p id="note-text">--</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Sample Cell Selection -->
+                    <div class="grid-card glass sample-gallery-container">
+                        <div class="gallery-title-header">
+                            <h3><i class="fa-solid fa-hand-pointer"></i> Quick-Load Sample Cells</h3>
+                            <p>Click on any pre-loaded micrograph below to test the classifier instantly</p>
+                        </div>
+                        <div class="samples-sub-grid">
+                            <div class="sample-group">
+                                <h4>Parasitized (Infected) smear samples</h4>
+                                <div class="samples-row" id="infected-samples-row">
+                                    <!-- Dynamic -->
+                                </div>
+                            </div>
+                            <div class="sample-group">
+                                <h4>Uninfected (Healthy) smear samples</h4>
+                                <div class="samples-row" id="uninfected-samples-row">
+                                    <!-- Dynamic -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 2: Model Analytics -->
+                <section id="analytics-section" class="content-section">
+                    <div class="grid-card glass full-width">
+                        <h2 class="section-title"><i class="fa-solid fa-chart-pie"></i> Model Training & Performance Analytics</h2>
+                        <p class="section-desc">Metrics generated from a robust 20% test split on 10,000 balanced images using Random Forest feature extraction.</p>
+                        
+                        <div class="analytics-layout">
+                            <div class="chart-wrapper">
+                                <h3>Confusion Matrix</h3>
+                                <div class="confusion-matrix-container">
+                                    <div class="cm-grid">
+                                        <div class="cm-cell header-col"></div>
+                                        <div class="cm-cell header-col">Predicted: Healthy</div>
+                                        <div class="cm-cell header-col">Predicted: Infected</div>
+                                        
+                                        <div class="cm-cell header-row">Actual: Healthy</div>
+                                        <div class="cm-cell value-cell tn" id="cm-tn">
+                                            <span class="cm-val">--</span>
+                                            <span class="cm-label">True Negative</span>
+                                        </div>
+                                        <div class="cm-cell value-cell fp" id="cm-fp">
+                                            <span class="cm-val">--</span>
+                                            <span class="cm-label">False Positive</span>
+                                        </div>
+                                        
+                                        <div class="cm-cell header-row">Actual: Infected</div>
+                                        <div class="cm-cell value-cell fn" id="cm-fn">
+                                            <span class="cm-val">--</span>
+                                            <span class="cm-label">False Negative</span>
+                                        </div>
+                                        <div class="cm-cell value-cell tp" id="cm-tp">
+                                            <span class="cm-val">--</span>
+                                            <span class="cm-label">True Positive</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chart-wrapper">
+                                <h3>Classification Performance Overview</h3>
+                                <canvas id="performance-chart" height="220"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="feature-engineering-info">
+                            <h3><i class="fa-solid fa-gears"></i> Feature Engineering & Extraction Methodology</h3>
+                            <p>Rather than using a black-box convolutional network, this model uses a specialized feature extraction technique that replicates biological diagnostics:</p>
+                            <div class="methodology-grid">
+                                <div class="method-card">
+                                    <div class="method-icon"><i class="fa-solid fa-scissors"></i></div>
+                                    <h4>Cell Mask Segmentation</h4>
+                                    <p>Grayscale thresholding isolates the red blood cell from the dark background, calculating the exact spatial area of the cell.</p>
+                                </div>
+                                <div class="method-card">
+                                    <div class="method-icon"><i class="fa-solid fa-dropper"></i></div>
+                                    <h4>Giemsa Stain Purple Ratio</h4>
+                                    <p>Giemsa dye selectively stains parasite DNA purple. We compute <code>(Red + Blue) / (2 * Green)</code> across cell pixels to locate purple spots.</p>
+                                </div>
+                                <div class="method-card">
+                                    <div class="method-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                                    <h4>Chromatin Contrast Statistics</h4>
+                                    <p>Extracts color percentiles (5th, 10th, 25th) inside the cell mask. High contrast drops in the Green channel mark dense chromatin spots.</p>
+                                </div>
+                                <div class="method-card">
+                                    <div class="method-icon"><i class="fa-solid fa-compress"></i></div>
+                                    <h4>Cropped Cell Structure</h4>
+                                    <p>Crops the bounding box of the cell and downsamples it to a 16x16 pixel feature map to analyze cell shapes and margins.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Cell Gallery -->
+                <section id="gallery-section" class="content-section">
+                    <div class="grid-card glass full-width">
+                        <h2 class="section-title"><i class="fa-solid fa-images"></i> Full Dataset Smear Gallery</h2>
+                        <p class="section-desc">Explore micrographs directly from the NIH Malaria Dataset. Select cards to view high-resolution samples.</p>
+                        
+                        <div class="gallery-filters">
+                            <button class="gallery-filter-btn active" data-filter="all">All Micrographs</button>
+                            <button class="gallery-filter-btn" data-filter="parasitized">Infected (Parasitized)</button>
+                            <button class="gallery-filter-btn" data-filter="uninfected">Healthy (Uninfected)</button>
+                        </div>
+
+                        <div class="full-gallery-grid" id="full-gallery-grid">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4: Educational Hub -->
+                <section id="education-section" class="content-section">
+                    <div class="grid-card glass full-width">
+                        <h2 class="section-title"><i class="fa-solid fa-book-medical"></i> Educational Hub: Malaria & Smear Diagnostics</h2>
+                        
+                        <div class="edu-layout">
+                            <div class="edu-main">
+                                <h3>What is Malaria?</h3>
+                                <p>Malaria is a life-threatening disease caused by plasmodium parasites that are transmitted to people through the bites of infected female Anopheles mosquitoes. Once inside the human body, the parasites multiply in the liver, then infect and destroy red blood cells (erythrocytes).</p>
+                                
+                                <h3>How is it Diagnosed?</h3>
+                                <p>The gold standard method is <strong>microscopic examination</strong> of Giemsa-stained blood smears. The staining procedure dyes the chromatin of the malaria parasites dark purple/red, while the cell body of red blood cells stains light pink. Technicians scan blood smears under high magnification (1000x) to search for ring-stage parasites, trophozoites, or gametocytes.</p>
+                                
+                                <div class="parasite-types">
+                                    <div class="type-card">
+                                        <h5>Ring-stage Trophozoites</h5>
+                                        <p>Commonly referred to as the "ring form," these represent young active parasites. They resemble small purple rings with a dark chromatin dot inside the cell cytoplasm.</p>
+                                    </div>
+                                    <div class="type-card">
+                                        <h5>Schizonts</h5>
+                                        <p>Dividing forms containing multiple merozoites. They fill a large part of the cell and show clustered, heavy purple pigment deposits.</p>
+                                    </div>
+                                    <div class="type-card">
+                                        <h5>Gametocytes</h5>
+                                        <p>The sexual stage of the parasite. In <i>Plasmodium falciparum</i>, these have a characteristic crescent or banana shape that is highly identifiable.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="edu-sidebar">
+                                <div class="quick-fact-card">
+                                    <h4><i class="fa-solid fa-lightbulb"></i> Clinical Impact Fact</h4>
+                                    <p>In 2022, there were an estimated 249 million cases of malaria worldwide, resulting in over 608,000 deaths. Early, accurate diagnosis within 24 hours of symptom onset is vital to save lives.</p>
+                                </div>
+                                <div class="quick-fact-card">
+                                    <h4><i class="fa-solid fa-desktop"></i> Role of AI in Microscopy</h4>
+                                    <p>Manual slide reading requires skilled microscopists and is highly tedious. Automated cell counters and classifiers decrease diagnostic times, eliminate human fatigue errors, and provide reliable diagnostic services in low-resource medical posts.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
